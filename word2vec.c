@@ -18,11 +18,35 @@
 #include <math.h>
 #include <pthread.h>
 
+#include <getopt.h>
+
 #define MAX_STRING 100
 #define EXP_TABLE_SIZE 1000
 #define MAX_EXP 6
 #define MAX_SENTENCE_LENGTH 1000
 #define MAX_CODE_LENGTH 40
+
+
+// Flag set by --verbose
+static int verbose_flag;
+
+// Structure for command line arguments
+struct args_t
+{
+  char	         qf[100];           // Query file
+  char	         of[100];           // Output file
+  char           btable[100];       // BLAST table file, used to extract hit IDs
+  long long int  rseqLen[2];  // Range sequence length to extract
+  long long int  seqLen[1];     // Sequence length to search
+  long long int  seqCnt;                 // Max number of sequences to extract
+  long long int  bytesLimit;             // Max number of bytes to extract
+  int            seqLenBuf;              // Number of sequence length options
+  int            rseqLenBuf;             // Number of range sequence length options
+  int            annotCnt;               // Number of annotation fields to extract
+  int            pipeProg;               // Pipeline program after extracting sequences 
+};
+
+int parseCmdline(int, char **, struct args_t *);
 
 const int vocab_hash_size = 30000000;  // Maximum 30 * 0.7 = 21M words in the vocabulary
 
@@ -625,6 +649,19 @@ int ArgPos(char *str, int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
+
+  int err;         // Trap errors
+  struct args_t args;     // Structure for command line options
+
+  // Parse command line options
+  err = parseCmdline(argc, argv, &args);
+  if( err != 0 )
+  {
+    fprintf(stderr, "Error: failed parsing command line options\n\n");
+    return EXIT_FAILURE;
+  }
+
+
   int i;
   if (argc == 1) {
     printf("WORD VECTOR estimation toolkit v 0.1c\n\n");
@@ -669,6 +706,7 @@ int main(int argc, char **argv) {
     printf("./word2vec -train data.txt -output vec.txt -size 200 -window 5 -sample 1e-4 -negative 5 -hs 0 -binary 0 -cbow 1 -iter 3\n\n");
     return 0;
   }
+  return 0;
   output_file[0] = 0;
   save_vocab_file[0] = 0;
   read_vocab_file[0] = 0;
@@ -700,3 +738,81 @@ int main(int argc, char **argv) {
   TrainModel();
   return 0;
 }
+
+
+int parseCmdline(int argc, char **argv, struct args_t *args)
+{
+    struct option long_options[] = {
+        // struct option {const char *name; int has_arg; int *flag; int val;};
+        // These options set a flag.
+        {"verbose", no_argument, &verbose_flag, 1},
+        // These options do not set a flag. We distinguish them by their indices.
+        {"add",    no_argument,       NULL, 'a'},
+        {"append", no_argument,       NULL, 'b'},
+        {"create", required_argument, NULL, 'c'},
+        {"delete", required_argument, NULL, 'd'},
+        {"file",   required_argument, NULL, 'f'},
+        {NULL, 0, NULL, 0}};
+
+    while (1) {
+        int option_index;  // getopt_long stores the option index here.
+        const int c = getopt_long(argc, argv, "abc:d:f:", long_options, &option_index);
+
+        // Detect end of command line options.
+        if (c < 0) break;
+
+        const struct option * const curropt = long_options + option_index;
+
+        switch (c) {
+            case 0:
+                // If this option sets a flag, do nothing.
+                if (!curropt->flag) {
+                    if (optarg)
+                        printf("option %s with arg %s\n", curropt->name, optarg);
+                    else
+                        printf("option %s\n", curropt->name);
+                }
+                break;
+
+            case 'a':
+                printf("option -a\n");
+                break;
+
+            case 'b':
+                printf("option -b\n");
+                break;
+
+            case 'c':
+                printf("option -c with value `%s'\n", optarg);
+                break;
+
+            case 'd':
+                printf("option -d with value `%s'\n", optarg);
+                break;
+
+            case 'f':
+                printf("option -f with value `%s'\n", optarg);
+                break;
+
+            case '?':
+                // getopt_long already prints an error message.
+                break;
+
+            default:
+                return EXIT_FAILURE;
+        }
+    }
+
+    // Instead of reporting --verbose as it is encountered, we report the final status.
+    if (verbose_flag) {
+        printf("verbose flag is set");
+    }
+
+    // Print remaining command line arguments (invalid options).
+    while (optind < argc) {
+        printf("%s: invalid option -- \'%s\'\n", *argv, *(argv + optind++));
+    }
+
+    return EXIT_SUCCESS;
+}
+
