@@ -33,19 +33,20 @@ static int verbose_flag;
 // Structure for command line arguments
 struct args_t
 {
-  char	         qf[100];           // Query file
-  char	         of[100];           // Output file
-  char           btable[100];       // BLAST table file, used to extract hit IDs
-  long long int  rseqLen[2];  // Range sequence length to extract
-  long long int  seqLen[1];     // Sequence length to search
-  long long int  seqCnt;                 // Max number of sequences to extract
-  long long int  bytesLimit;             // Max number of bytes to extract
-  int            seqLenBuf;              // Number of sequence length options
-  int            rseqLenBuf;             // Number of range sequence length options
-  int            annotCnt;               // Number of annotation fields to extract
-  int            pipeProg;               // Pipeline program after extracting sequences 
+    char	       qf[100];     // Query file
+    char	       of[100];     // Output file
+    char           btable[100]; // BLAST table file, used to extract hit IDs
+    long long int  rseqLen[2];  // Range sequence length to extract
+    long long int  seqLen[1];   // Sequence length to search
+    long long int  seqCnt;      // Max number of sequences to extract
+    long long int  bytesLimit;  // Max number of bytes to extract
+    int            seqLenBuf;   // Number of sequence length options
+    int            rseqLenBuf;  // Number of range sequence length options
+    int            annotCnt;    // Number of annotation fields to extract
+    int            pipeProg;    // Pipeline program after extracting sequences 
 };
 
+void printHelp(void);
 int parseCmdline(int, char **, struct args_t *);
 
 const int vocab_hash_size = 30000000;  // Maximum 30 * 0.7 = 21M words in the vocabulary
@@ -650,6 +651,7 @@ int ArgPos(char *str, int argc, char **argv) {
 
 int main(int argc, char **argv) {
 
+/*
   int err;         // Trap errors
   struct args_t args;     // Structure for command line options
 
@@ -660,10 +662,47 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Error: failed parsing command line options\n\n");
     return EXIT_FAILURE;
   }
+*/
 
+  if (argc < 2)
+    printHelp();
 
   int i;
-  if (argc == 1) {
+  output_file[0] = 0;
+  save_vocab_file[0] = 0;
+  read_vocab_file[0] = 0;
+  if ((i = ArgPos((char *)"-size", argc, argv)) > 0) layer1_size = atoi(argv[i + 1]);
+  if ((i = ArgPos((char *)"-train", argc, argv)) > 0) strcpy(train_file, argv[i + 1]);
+  if ((i = ArgPos((char *)"-save-vocab", argc, argv)) > 0) strcpy(save_vocab_file, argv[i + 1]);
+  if ((i = ArgPos((char *)"-read-vocab", argc, argv)) > 0) strcpy(read_vocab_file, argv[i + 1]);
+  if ((i = ArgPos((char *)"-debug", argc, argv)) > 0) debug_mode = atoi(argv[i + 1]);
+  if ((i = ArgPos((char *)"-binary", argc, argv)) > 0) binary = atoi(argv[i + 1]);
+  if ((i = ArgPos((char *)"-cbow", argc, argv)) > 0) cbow = atoi(argv[i + 1]);
+  if (cbow) alpha = 0.05;
+  if ((i = ArgPos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
+  if ((i = ArgPos((char *)"-output", argc, argv)) > 0) strcpy(output_file, argv[i + 1]);
+  if ((i = ArgPos((char *)"-window", argc, argv)) > 0) window = atoi(argv[i + 1]);
+  if ((i = ArgPos((char *)"-sample", argc, argv)) > 0) sample = atof(argv[i + 1]);
+  if ((i = ArgPos((char *)"-hs", argc, argv)) > 0) hs = atoi(argv[i + 1]);
+  if ((i = ArgPos((char *)"-negative", argc, argv)) > 0) negative = atoi(argv[i + 1]);
+  if ((i = ArgPos((char *)"-threads", argc, argv)) > 0) num_threads = atoi(argv[i + 1]);
+  if ((i = ArgPos((char *)"-iter", argc, argv)) > 0) iter = atoi(argv[i + 1]);
+  if ((i = ArgPos((char *)"-min-count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
+  if ((i = ArgPos((char *)"-classes", argc, argv)) > 0) classes = atoi(argv[i + 1]);
+  vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
+  vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
+  expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
+  for (i = 0; i < EXP_TABLE_SIZE; i++) {
+    expTable[i] = exp((i / (real)EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
+    expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)
+  }
+  TrainModel();
+  return 0;
+}
+
+
+void printHelp(void)
+{
     printf("WORD VECTOR estimation toolkit v 0.1c\n\n");
     printf("Options:\n");
     printf("Parameters for training:\n");
@@ -703,65 +742,50 @@ int main(int argc, char **argv) {
     printf("\t-cbow <int>\n");
     printf("\t\tUse the continuous bag of words model; default is 1 (use 0 for skip-gram model)\n");
     printf("\nExamples:\n");
-    printf("./word2vec -train data.txt -output vec.txt -size 200 -window 5 -sample 1e-4 -negative 5 -hs 0 -binary 0 -cbow 1 -iter 3\n\n");
-    return 0;
-  }
-  return 0;
-  output_file[0] = 0;
-  save_vocab_file[0] = 0;
-  read_vocab_file[0] = 0;
-  if ((i = ArgPos((char *)"-size", argc, argv)) > 0) layer1_size = atoi(argv[i + 1]);
-  if ((i = ArgPos((char *)"-train", argc, argv)) > 0) strcpy(train_file, argv[i + 1]);
-  if ((i = ArgPos((char *)"-save-vocab", argc, argv)) > 0) strcpy(save_vocab_file, argv[i + 1]);
-  if ((i = ArgPos((char *)"-read-vocab", argc, argv)) > 0) strcpy(read_vocab_file, argv[i + 1]);
-  if ((i = ArgPos((char *)"-debug", argc, argv)) > 0) debug_mode = atoi(argv[i + 1]);
-  if ((i = ArgPos((char *)"-binary", argc, argv)) > 0) binary = atoi(argv[i + 1]);
-  if ((i = ArgPos((char *)"-cbow", argc, argv)) > 0) cbow = atoi(argv[i + 1]);
-  if (cbow) alpha = 0.05;
-  if ((i = ArgPos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
-  if ((i = ArgPos((char *)"-output", argc, argv)) > 0) strcpy(output_file, argv[i + 1]);
-  if ((i = ArgPos((char *)"-window", argc, argv)) > 0) window = atoi(argv[i + 1]);
-  if ((i = ArgPos((char *)"-sample", argc, argv)) > 0) sample = atof(argv[i + 1]);
-  if ((i = ArgPos((char *)"-hs", argc, argv)) > 0) hs = atoi(argv[i + 1]);
-  if ((i = ArgPos((char *)"-negative", argc, argv)) > 0) negative = atoi(argv[i + 1]);
-  if ((i = ArgPos((char *)"-threads", argc, argv)) > 0) num_threads = atoi(argv[i + 1]);
-  if ((i = ArgPos((char *)"-iter", argc, argv)) > 0) iter = atoi(argv[i + 1]);
-  if ((i = ArgPos((char *)"-min-count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
-  if ((i = ArgPos((char *)"-classes", argc, argv)) > 0) classes = atoi(argv[i + 1]);
-  vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
-  vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
-  expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
-  for (i = 0; i < EXP_TABLE_SIZE; i++) {
-    expTable[i] = exp((i / (real)EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
-    expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)
-  }
-  TrainModel();
-  return 0;
+    printf("./word2vec -train data.txt -output vec.txt -size 200 -window 5 -sample 1e-4 -negative 5 -hs 0 -binary 0 -cbow 1 -iter 3\n");
+    printf("\n");
+
+    exit(EXIT_SUCCESS);
 }
 
 
 int parseCmdline(int argc, char **argv, struct args_t *args)
 {
+    const struct option *curropt = NULL;
     struct option long_options[] = {
         // struct option {const char *name; int has_arg; int *flag; int val;};
         // These options set a flag.
         {"verbose", no_argument, &verbose_flag, 1},
         // These options do not set a flag. We distinguish them by their indices.
-        {"add",    no_argument,       NULL, 'a'},
-        {"append", no_argument,       NULL, 'b'},
-        {"create", required_argument, NULL, 'c'},
-        {"delete", required_argument, NULL, 'd'},
-        {"file",   required_argument, NULL, 'f'},
+        {"help",       no_argument,       NULL, 'h'},
+        {"train",      required_argument, NULL, 't'},  // file
+        {"output",     required_argument, NULL, 'o'},  // file
+        {"size",       required_argument, NULL, 'z'},  // int
+        {"window",     required_argument, NULL, 'w'},  // int
+        {"sample",     required_argument, NULL, 's'},  // float
+        {"hs",         required_argument, NULL, 'y'},  // int, hierarchical
+        {"negative",   required_argument, NULL, 'n'},  // int
+        {"threads",    required_argument, NULL, 'p'},  // int
+        {"iter",       required_argument, NULL, 'i'},  // int
+        {"min-count",  required_argument, NULL, 'm'},  // int
+        {"alpha",      required_argument, NULL, 'a'},  // float
+        {"classes",    required_argument, NULL, 'c'},  // int
+        {"debug",      required_argument, NULL, 'd'},  // int
+        {"binary",     required_argument, NULL, 'b'},  // int
+        {"save-vocab", required_argument, NULL, 'v'},  // file
+        {"read-vocab", required_argument, NULL, 'r'},  // file
+        {"cbow",       required_argument, NULL, 'l'},  // int, model
         {NULL, 0, NULL, 0}};
 
     while (1) {
         int option_index;  // getopt_long stores the option index here.
-        const int c = getopt_long(argc, argv, "abc:d:f:", long_options, &option_index);
+        const int c = getopt_long(argc, argv, "ht:o:z:w:s:y:n:p:i:m:a:c:d:b:v:r:l:", long_options, &option_index);
 
         // Detect end of command line options.
-        if (c < 0) break;
+        if (c < 0)
+            break;
 
-        const struct option * const curropt = long_options + option_index;
+        curropt = long_options + option_index;
 
         switch (c) {
             case 0:
@@ -774,24 +798,58 @@ int parseCmdline(int argc, char **argv, struct args_t *args)
                 }
                 break;
 
-            case 'a':
-                printf("option -a\n");
+            case 'h':
+                printHelp(); 
+                break;
+            case 't':
                 break;
 
-            case 'b':
-                printf("option -b\n");
+            case 'o':
+                break;
+
+            case 'z':
+                break;
+
+            case 'w':
+                break;
+
+            case 's':
+                break;
+
+            case 'y':
+                break;
+
+            case 'n':
+                break;
+
+            case 'p':
+                break;
+
+            case 'i':
+                break;
+
+            case 'm':
+                break;
+
+            case 'a':
                 break;
 
             case 'c':
-                printf("option -c with value `%s'\n", optarg);
                 break;
 
             case 'd':
-                printf("option -d with value `%s'\n", optarg);
                 break;
 
-            case 'f':
-                printf("option -f with value `%s'\n", optarg);
+            case 'b':
+                break;
+
+            case 'v':
+                break;
+
+            case 'r':
+                break;
+
+            case 'l':
                 break;
 
             case '?':
