@@ -33,17 +33,8 @@ static int verbose_flag;
 // Structure for command line arguments
 struct args_t
 {
-    char	       qf[100];     // Query file
-    char	       of[100];     // Output file
-    char           btable[100]; // BLAST table file, used to extract hit IDs
-    long long int  rseqLen[2];  // Range sequence length to extract
-    long long int  seqLen[1];   // Sequence length to search
-    long long int  seqCnt;      // Max number of sequences to extract
-    long long int  bytesLimit;  // Max number of bytes to extract
-    int            seqLenBuf;   // Number of sequence length options
-    int            rseqLenBuf;  // Number of range sequence length options
-    int            annotCnt;    // Number of annotation fields to extract
-    int            pipeProg;    // Pipeline program after extracting sequences 
+    layer1_size;
+    vocab_max_size;
 };
 
 void printHelp(void);
@@ -70,6 +61,7 @@ real alpha = 0.025, starting_alpha, sample = 1e-3;
 real *syn0, *syn1, *syn1neg, *expTable;
 clock_t start;
 
+                break;
 int hs = 0, negative = 5;
 const int table_size = 1e8;
 int *table;
@@ -119,6 +111,7 @@ void ReadWord(char *word, FILE *fin) {
 int GetWordHash(char *word) {
   unsigned long long a, hash = 0;
   for (a = 0; a < strlen(word); a++) hash = hash * 257 + word[a];
+                break;
   hash = hash % vocab_hash_size;
   return hash;
 }
@@ -140,6 +133,7 @@ int ReadWordIndex(FILE *fin) {
   ReadWord(word, fin);
   if (feof(fin)) return -1;
   return SearchVocab(word);
+                break;
 }
 
 // Adds a word to the vocabulary
@@ -651,7 +645,6 @@ int ArgPos(char *str, int argc, char **argv) {
 
 int main(int argc, char **argv) {
 
-/*
   int err;         // Trap errors
   struct args_t args;     // Structure for command line options
 
@@ -662,8 +655,9 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Error: failed parsing command line options\n\n");
     return EXIT_FAILURE;
   }
-*/
 
+  printf("hello world!");
+/*
   if (argc < 2)
     printHelp();
 
@@ -697,6 +691,7 @@ int main(int argc, char **argv) {
     expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)
   }
   TrainModel();
+*/
   return 0;
 }
 
@@ -751,6 +746,7 @@ void printHelp(void)
 
 int parseCmdline(int argc, char **argv, struct args_t *args)
 {
+    int retval = EXIT_SUCCESS;
     const struct option *curropt = NULL;
     struct option long_options[] = {
         // struct option {const char *name; int has_arg; int *flag; int val;};
@@ -777,6 +773,10 @@ int parseCmdline(int argc, char **argv, struct args_t *args)
         {"cbow",       required_argument, NULL, 'l'},  // int, model
         {NULL, 0, NULL, 0}};
 
+    // Set default options
+    args.layer1_size = 100;  // size
+    args.vocab_max_size = 1000;
+
     while (1) {
         int option_index;  // getopt_long stores the option index here.
         const int c = getopt_long(argc, argv, "ht:o:z:w:s:y:n:p:i:m:a:c:d:b:v:r:l:", long_options, &option_index);
@@ -800,6 +800,7 @@ int parseCmdline(int argc, char **argv, struct args_t *args)
 
             case 'h':
                 printHelp(); 
+                exit(retval);
                 break;
             case 't':
                 break;
@@ -814,6 +815,7 @@ int parseCmdline(int argc, char **argv, struct args_t *args)
                 break;
 
             case 's':
+                //args.layer1_size = atoi(argv);
                 break;
 
             case 'y':
@@ -854,10 +856,12 @@ int parseCmdline(int argc, char **argv, struct args_t *args)
 
             case '?':
                 // getopt_long already prints an error message.
+                retval = EXIT_FAILURE;
                 break;
 
             default:
-                return EXIT_FAILURE;
+                retval = EXIT_FAILURE;
+                exit(retval);
         }
     }
 
@@ -867,10 +871,12 @@ int parseCmdline(int argc, char **argv, struct args_t *args)
     }
 
     // Print remaining command line arguments (invalid options).
-    while (optind < argc) {
-        printf("%s: invalid option -- \'%s\'\n", *argv, *(argv + optind++));
+    if (optind < argc) {
+        retval = EXIT_FAILURE;
+        for (int i = optind; i < argc; ++i) {
+            printf("%s: invalid option -- \'%s\'\n", *argv, *(argv + i));
     }
 
-    return EXIT_SUCCESS;
+    return retval;
 }
 

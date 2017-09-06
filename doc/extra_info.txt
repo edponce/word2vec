@@ -1,0 +1,43 @@
+1. Difference between word2vec and GloVe.
+
+Both models learn geometrical encodings (vectors) of words
+from their co-occurrence information (how frequently they
+appear together in large text corpora). They differ in that
+word2vec is a "predictive" model, whereas GloVe is a
+"count-based" model. See this paper for more on the distinctions
+between these two approaches: http://clic.cimec.unitn.it/marco....
+
+Predictive models learn their vectors in order to improve
+their predictive ability of Loss(target word | context words; Vectors),
+i.e. the loss of predicting the target words from the context
+words given the vector representations. In word2vec, this 
+is cast as a feed-forward neural network and optimized as such using SGD, etc.
+
+Count-based models learn their vectors by essentially doing 
+dimensionality reduction on the co-occurrence counts matrix.
+They first construct a large matrix of (words x context) co-occurrence
+information, i.e. for each "word" (the rows), you count how frequently
+we see this word in some "context" (the columns) in a large corpus.
+The number of "contexts" is of course large, since it is essentially
+combinatorial in size. So then they factorize this matrix to yield a
+lower-dimensional (word x features) matrix, where each row now yields
+a vector representation for each word. In general, this is done by
+minimizing a "reconstruction loss" which tries to find the lower-dimensional
+representations which can explain most of the variance in the high-dimensional
+data. In the specific case of GloVe, the counts matrix is preprocessed
+by normalizing the counts and log-smoothing them. This turns out to
+be A Good Thing in terms of the quality of the learned representations.
+
+However, as pointed out, when we control for all the training
+hyper-parameters, the embeddings generated using the two
+methods tend to perform very similarly in downstream NLP tasks.
+The additional benefits of GloVe over word2vec is that it is
+easier to parallelize the implementation which means it's easier
+to train over more data, which, with these models, is always A Good Thing.
+
+2. Video resources
+
+Stanford NLP
+YouTube videos
+coursera videos?
+
