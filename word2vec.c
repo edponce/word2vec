@@ -19,6 +19,10 @@
 #include <pthread.h>
 #include <getopt.h>
 
+#include "simd.h"
+//#if defined SIMD_MODE
+//#endif
+
 #define EXIT_FAILURE_CONFIG -2
 
 #define MAX_STRING 100
