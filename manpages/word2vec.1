@@ -1,0 +1,157 @@
+.\" manpage for word2vec program.
+.TH WORD2VEC 1 "8 September 2017" "1.0" "Manpage for word2vec program"
+.SH NAME
+\fBword2vec\fR -
+Compute a distributed representation of words using the continuous bag-of-words (CBOW)
+and the skip-gram (SG) models.
+.SH SYNOPSIS
+.HP
+\fBword2vec\fR
+[\fB\-h\fR]
+[\fB\-t\fR \fItrainFile\fR]
+[\fB\-o\fR \fIoutputVectorFile\fR]
+[\fB\-z\fR \fIvectorSize\fR]
+[\fB\-w\fR \fIcontextWindowSize\fR]
+[\fB\-s\fR \fIwordOccurThreshold\fR]
+[\fB\-y\fR \fIhierarchicalSoftmax\fR]
+[\fB\-n\fR \fInegativeSamples\fR]
+[\fB\-p\fR \fIthreadCount\fR]
+[\fB\-i\fR \fItrainIterations\fR]
+[\fB\-m\fR \fIwordOccurMin\fR]
+[\fB\-a\fR \fIlearningRate\fR]
+[\fB\-c\fR \fIoutputClasses\fR]
+[\fB\-d\fR \fIdebugMode\fR]
+[\fB\-b\fR \fIsaveBinaryVectors\fR]
+[\fB\-v\fR \fIsaveVocabulary\fR]
+[\fB\-r\fR \fIreadVocabulary\fR]
+[\fB\-l\fR \fIcbowModel\fR]
+.SH DESCRIPTION
+\fBword2vec\fR is a program for generating a distributed representation of words.
+Given a text corpus, \fBword2vec\fR learns a vector for every word in the vocabulary
+using the continuous bag-of-words (BOW) or the skip-gram (SG) model neural network
+architecture.
+.P
+CBOW blah blah
+.P
+SG blah blah
+.P
+In general, the user specifies the following: desired vector dimensionality, size of the
+context window, training algorithm (hierarchical softmax or negative sampling), threshold
+for downsampling the frequent words, number of threads to use, and the format of the
+output word vector file (text or binary).
+.P
+Usually, the other hyper-parameters such as the learning rate do not need to be tuned
+for different training sets.
+.P
+The original implementation of word2vec was provided by Google and can be found at
+\fIhttps://code.google.com/p/word2vec\fR.
+.SH OPTIONS
+The command line is parsed according to the following convention. Command line options can be specified in any order. For options that should be specified only once, only the last setting will be used. Short options are specified using a single '-' (minus character). For short options either a whitespace or a '=' (equal sign) between a command line option and its argument is optional. For long options either a whitespace or a '=' (equal sign) between a command line option and its argument is mandatory. Long options are specified using a pair '--' (minus character).
+.HP
+\fB-h\fR, \fB--help\fR
+.br
+Show usage and help information.
+.HP
+\fB-t\fR, \fB--train=\fR\fItrainFile\fR
+.br
+File with text data to train the model.
+.HP
+\fB-o\fR, \fB--output=\fR\fIoutputVectorFile\fR
+.br
+File to save the resulting word vectors/word clusters.
+.HP
+\fB-z\fR, \fB--size=\fR\fIvectorSize\fR
+.br
+Size of word vectors.
+Default is 100.
+.HP
+\fB-w\fR, \fB--window=\fR\fIcontextWindowSize\fR
+.br
+Max skip length between words.
+Default is 5.
+.HP
+\fB-s\fR, \fB--sample=\fR\fIwordOccurThreshold\fR
+.br
+Threshold for occurrence of words. Words with higher frequency in the training data
+are randomly down-sampled.
+Default is 1e-3, common values range in [0, 1e-5].
+.HP
+\fB-y\fR, \fB--hs=\fR\fIhierarchicalSoftmax\fR
+.br
+Use Hierarchical Softmax.
+Default is 0 (disabled).
+.HP
+\fB-n\fR, \fB--negative=\fR\fInegativeSamples\fR
+.br
+Number of negative examples.
+Default is 5 (0 = disabled), common values range in [3, 10].
+.HP
+\fB-p\fR, \fB--threads=\fR\fIthreadCount\fR
+.br
+Number of threads to use.
+Default is 5.
+.HP
+\fB-i\fR, \fB--iter=\fR\fItrainIterations\fR
+.br
+Training iterations to run.
+Default is 5.
+.HP
+\fB-m\fR, \fB--mincount=\fR\fIwordOccurMin\fR
+.br
+Threshold to discard words with lower frequency.
+Default is 5.
+.HP
+\fB-a\fR, \fB--alpha=\fR\fIlearningRate\fR
+.br
+Starting learning rate.
+Defaults are 0.05 (CBOW) and 0.025 (SG).
+.HP
+\fB-c\fR, \fB--classes=\fR\fIoutputClasses\fR
+.br
+Output word classes rather than word vectors.
+Default is 0 (write vectors).
+.HP
+\fB-d\fR, \fB--debug=\fR\fIdebugMode\fR
+.br
+Debug mode.
+Default is 2 (more info during training).
+.HP
+\fB-b\fR, \fB--binary=\fR\fIsaveBinaryVectors\fR
+.br
+Save the resulting vectors in binary mode.
+Default is 0 (disabled).
+.HP
+\fB-v\fR, \fB--savevocab=\fR\fIsaveVocabulary\fR
+.br
+File to save the vocabulary.
+.HP
+\fB-r\fR, \fB--readvocab=\fR\fIreadVocabulary\fR
+.br
+File for reading the vocabulary, not constructed from the training data.
+.HP
+\fB-l\fR, \fB--cbow=\fR\fIcbowMode\fR
+.br
+Use the continuous bag-of-words model.
+Default is 1 (enabled), for SG use 0 (disabled).
+.SH EXAMPLES
+(CBOW mode)
+.RS
+\fBword2vec\fR \fB-t\fR data.txt \fB-o\fR vec.txt \fB-z\fR 200 \fB-w\fR 5 \fB-s\fR 1e-4 \fB-n\fR 5 \fB-y\fR 0 \fB-b\fR 0 \fB-l\fR 1 \fB-i\fR 3
+.RE
+.P
+(SG mode)
+.RS
+\fBword2vec\fR \fB-t\fR data.txt \fB-o\fR vec.txt \fB-z\fR 200 \fB-w\fR 5 \fB-s\fR 1e-4 \fB-n\fR 5 \fB-y\fR 0 \fB-b\fR 0 \fB-l\fR 0 \fB-i\fR 3
+.RE
+.SH EXIT STATUS
+ \fB0\fR    Successful completion (EXIT_SUCCESS)
+.P
+\fB-1\fR    An error occurred (EXIT_FAILURE)
+.P
+\fB-2\fR    Configuration error
+.SH BUGS
+Report bugs, suggestions, and comments to \fIeponcemo@utk.edu\fR.
+.SH AUTHOR
+Written by Eduardo Ponce (\fIeponcemo@utk.edu\fR).
+.SH COPYRIGHT
+This is free software.

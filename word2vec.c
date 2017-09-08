@@ -17,8 +17,9 @@
 #include <string.h>
 #include <math.h>
 #include <pthread.h>
-
 #include <getopt.h>
+
+#define EXIT_FAILURE_CONFIG -2
 
 #define MAX_STRING 100
 #define EXP_TABLE_SIZE 1000
@@ -33,8 +34,8 @@ static int verbose_flag;
 // Structure for command line arguments
 struct args_t
 {
-    layer1_size;
-    vocab_max_size;
+    int layer1_size;
+    int vocab_max_size;
 };
 
 void printHelp(void);
@@ -61,7 +62,6 @@ real alpha = 0.025, starting_alpha, sample = 1e-3;
 real *syn0, *syn1, *syn1neg, *expTable;
 clock_t start;
 
-                break;
 int hs = 0, negative = 5;
 const int table_size = 1e8;
 int *table;
@@ -111,7 +111,6 @@ void ReadWord(char *word, FILE *fin) {
 int GetWordHash(char *word) {
   unsigned long long a, hash = 0;
   for (a = 0; a < strlen(word); a++) hash = hash * 257 + word[a];
-                break;
   hash = hash % vocab_hash_size;
   return hash;
 }
@@ -133,7 +132,6 @@ int ReadWordIndex(FILE *fin) {
   ReadWord(word, fin);
   if (feof(fin)) return -1;
   return SearchVocab(word);
-                break;
 }
 
 // Adds a word to the vocabulary
@@ -645,18 +643,11 @@ int ArgPos(char *str, int argc, char **argv) {
 
 int main(int argc, char **argv) {
 
-  int err;         // Trap errors
   struct args_t args;     // Structure for command line options
 
   // Parse command line options
-  err = parseCmdline(argc, argv, &args);
-  if( err != 0 )
-  {
-    fprintf(stderr, "Error: failed parsing command line options\n\n");
-    return EXIT_FAILURE;
-  }
+  parseCmdline(argc, argv, &args);
 
-  printf("hello world!");
 /*
   if (argc < 2)
     printHelp();
@@ -696,6 +687,11 @@ int main(int argc, char **argv) {
 }
 
 
+/**
+ *  \brief Help info
+ *
+ *  \retval None
+ */
 void printHelp(void)
 {
     printf("WORD VECTOR estimation toolkit v 0.1c\n\n");
@@ -739,14 +735,12 @@ void printHelp(void)
     printf("\nExamples:\n");
     printf("./word2vec -train data.txt -output vec.txt -size 200 -window 5 -sample 1e-4 -negative 5 -hs 0 -binary 0 -cbow 1 -iter 3\n");
     printf("\n");
-
-    exit(EXIT_SUCCESS);
 }
 
 
 int parseCmdline(int argc, char **argv, struct args_t *args)
 {
-    int retval = EXIT_SUCCESS;
+    int err = EXIT_SUCCESS;
     const struct option *curropt = NULL;
     struct option long_options[] = {
         // struct option {const char *name; int has_arg; int *flag; int val;};
@@ -763,19 +757,19 @@ int parseCmdline(int argc, char **argv, struct args_t *args)
         {"negative",   required_argument, NULL, 'n'},  // int
         {"threads",    required_argument, NULL, 'p'},  // int
         {"iter",       required_argument, NULL, 'i'},  // int
-        {"min-count",  required_argument, NULL, 'm'},  // int
+        {"mincount",   required_argument, NULL, 'm'},  // int
         {"alpha",      required_argument, NULL, 'a'},  // float
         {"classes",    required_argument, NULL, 'c'},  // int
         {"debug",      required_argument, NULL, 'd'},  // int
         {"binary",     required_argument, NULL, 'b'},  // int
-        {"save-vocab", required_argument, NULL, 'v'},  // file
-        {"read-vocab", required_argument, NULL, 'r'},  // file
+        {"savevocab",  required_argument, NULL, 'v'},  // file
+        {"readvocab",  required_argument, NULL, 'r'},  // file
         {"cbow",       required_argument, NULL, 'l'},  // int, model
         {NULL, 0, NULL, 0}};
 
     // Set default options
-    args.layer1_size = 100;  // size
-    args.vocab_max_size = 1000;
+    args->layer1_size = 100;  // size
+    args->vocab_max_size = 1000;
 
     while (1) {
         int option_index;  // getopt_long stores the option index here.
@@ -799,8 +793,8 @@ int parseCmdline(int argc, char **argv, struct args_t *args)
                 break;
 
             case 'h':
-                printHelp(); 
-                exit(retval);
+                printHelp();
+                exit(EXIT_SUCCESS);
                 break;
             case 't':
                 break;
@@ -856,12 +850,11 @@ int parseCmdline(int argc, char **argv, struct args_t *args)
 
             case '?':
                 // getopt_long already prints an error message.
-                retval = EXIT_FAILURE;
+                err = EXIT_FAILURE_CONFIG;
                 break;
 
             default:
-                retval = EXIT_FAILURE;
-                exit(retval);
+                exit(EXIT_FAILURE_CONFIG);
         }
     }
 
@@ -872,11 +865,18 @@ int parseCmdline(int argc, char **argv, struct args_t *args)
 
     // Print remaining command line arguments (invalid options).
     if (optind < argc) {
-        retval = EXIT_FAILURE;
+        err = EXIT_FAILURE_CONFIG;
         for (int i = optind; i < argc; ++i) {
             printf("%s: invalid option -- \'%s\'\n", *argv, *(argv + i));
+        }
     }
 
-    return retval;
+    // Check for configuration errors
+    if( err != EXIT_SUCCESS ) {
+        fprintf(stderr, "Error: failed parsing command line options\n\n");
+        exit(EXIT_FAILURE_CONFIG);
+    }
+
+    return EXIT_SUCCESS;
 }
 
