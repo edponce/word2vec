@@ -1,5 +1,5 @@
-#ifndef __SIMD_H
-#define __SIMD_H
+#ifndef _SIMD_H
+#define _SIMD_H
 
 
 /*
@@ -50,14 +50,14 @@
 
 
 /*
- *  Alignment macros
- *  Use SIMD_WIDTH_BYTES provided by SIMD modules and
- *  macros provided by compiler/architecture settings.
+ *  General form of macros provided by compiler/architecture settings.
+ *  Use SIMD_WIDTH_BYTES provided by SIMD modules.
  */
 #define __SIMD_ALIGN__             ARCH_ATTR_ALIGNED(SIMD_WIDTH_BYTES)
 #define __SIMD_ASSUME_ALIGNED__(a) ARCH_ASSUME_ALIGNED(a, SIMD_WIDTH_BYTES)
 #define __SIMD_ASSUME__(a)         ARCH_ASSUME(a)
+#define __SIMD_INLINE__            ARCH_ATTR_INLINE
 
 
-#endif  // __SIMD_H
+#endif  // _SIMD_H
 

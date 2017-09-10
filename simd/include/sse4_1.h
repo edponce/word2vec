@@ -1,5 +1,5 @@
-#ifndef __SSE4_1_H
-#define __SSE4_1_H
+#ifndef _SSE4_1_H
+#define _SSE4_1_H
 
 
 /*
@@ -13,6 +13,7 @@
  *  NOTE: currently only support x86_64, GCC and Intel compilers
  */
 #include <x86intrin.h>
+//#include <smmintrin.h>
 
 
 /*
@@ -543,5 +544,5 @@ void simd_storeu(double * const sa, const SIMD_DBL va)
 { _mm_storeu_pd(sa, va); }
 
 
-#endif  // __SSE4_1_H
+#endif  // _SSE4_1_H
 

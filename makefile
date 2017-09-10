@@ -7,19 +7,19 @@ MKFILE := $(MAKEFILE_LIST)
 
 # C compiler
 CC := g++
-#CC := icc
+#CC := icpc
 
 # GNU compiler and linker options
 # -mmx, -msse, -msse2, -msse3, -mssse3, -msse4.1, -msse4.2, -msse4 = SIMD extensions
 # -mavx, -mavx2, -mavx512bw, -mavx512f, -mavx512pf, -mavx512er, -mavx512cd = SIMD extensions
 # -fopenmp, -fopenmp-simd = enable OpenMP
-SIMDFLAG := -msse4.1
+#SIMDFLAG := -msse4.1
 #SIMDFLAG := -mavx2
-CFLAGS := $(SIMDFLAG) -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-result -pthread -O3 -march=native -std=c++11 -funroll-loops
+CFLAGS := $(SIMDFLAG) -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-result -pthread -O3 -march=native -std=c++98 -funroll-loops
 #CFLAGS += -fopenmp
 
 # INTEL compiler and linker options
-#CFLAGS := $(SIMDFLAG) -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-result -pthread -O3 -march=native -std=c++11 -funroll-loops
+#CFLAGS := $(SIMDFLAG) -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-result -pthread -O3 -march=native -std=c++98 -funroll-loops
 #CFLAGS += -openmp
 
 # Linker options
@@ -44,7 +44,7 @@ DEFINES := -DSIMD_MODE   # auto SIMD mode
 DEFINES += -D_POSIX_C_SOURCE=200112L
 
 # Define header paths in addition to standard paths
-INCDIR := -I. -Iarch -Isimd
+INCDIR := -I. -Isimd/include
 
 # Define library paths in addition to standard paths
 LIBDIR :=
@@ -54,8 +54,21 @@ LIBS := -lm
 
 # Header files
 # NOTE: allow recompile if changed
-HEADERS := arch/*.h simd/*.h
+HEADERS := simd/include/*.h
 
+#######################################
+# Testsuite
+LFLAGS_TS :=
+INCDIR_TS := -I. -Isimd/include -Isimd/testsuite/include
+LIBDIR_TS :=
+LIBS_TS := -lm
+
+HEADERS_TS := simd/include/*.h simd/testsuite/include/*.h
+TOPDIR_TS := simd/testsuite
+SRC_TS := $(TOPDIR_TS)/src/test_simd.cpp $(TOPDIR_TS)/src/test_utils.cpp
+DRIVER_TS := $(TOPDIR_TS)/src/test_suite.cpp
+OBJDIR_TS := $(TOPDIR_TS)/obj
+OBJ_TS := $(patsubst %.cpp, $(OBJDIR_TS)/%.o, $(notdir $(SRC_TS)))
 #######################################
 
 # Targets that are not real files to create
@@ -63,10 +76,28 @@ HEADERS := arch/*.h simd/*.h
 
 all: word2vec
 
-word2vec : word2vec.c
-	$(CC) $(CFLAGS) $(LFLAGS) $(DEFINES) $(INCDIR) $(LIBDIR) word2vec.c -o word2vec $(LIBS)
-distance : distance.c
-	$(CC) $(CFLAGS) $(LFLAGS) $(DEFINES) $(INCDIR) $(LIBDIR) distance.c -o distance $(LIBS)
+word2vec : word2vec.cpp
+	$(CC) $(CFLAGS) $(LFLAGS) $(DEFINES) $(INCDIR) $(LIBDIR) $< -o $@ $(LIBS)
+
+distance : distance.cpp
+	$(CC) $(CFLAGS) $(LFLAGS) $(DEFINES) $(INCDIR) $(LIBDIR) $< -o $@ $(LIBS)
+
+#######################################
+# Testsuite
+testsuite : $(OBJ_TS) $(DRIVER_TS)
+	$(CC) $(CFLAGS) $(LFLAGS_TS) $(DEFINES) $(INCDIR_TS) $(LIBDIR_TS) $(DRIVER_TS) -o $(TOPDIR_TS)/$@ $(OBJ_TS) $(LIBS_TS)
+
+$(OBJDIR_TS)/%.o: $(TOPDIR_TS)/src/%.cpp
+	@test ! -d $(OBJDIR_TS) && mkdir $(OBJDIR_TS) || true
+	$(CC) $(CFLAGS) $(DEFINES) $(INCDIR_TS) $(LIBDIR_TS) -c $< -o $@ $(LIBS_TS)
+#######################################
 
 clean:
-	rm -rf word2vec distance
+	@test -x word2vec && rm word2vec || true
+	@test -x distance && rm distance || true
+#######################################
+# Testsuite
+	@test -x $(TOPDIR_TS)/testsuite && rm $(TOPDIR_TS)/testsuite || true
+	@test -d $(OBJDIR_TS) && rm -r $(OBJDIR_TS) || true
+#######################################
+
