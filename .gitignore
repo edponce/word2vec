@@ -5,4 +5,4 @@ text8
 html
 word2vec
 distance
-testsuite
+simd/testsuite/testsuite
