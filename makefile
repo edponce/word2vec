@@ -15,11 +15,11 @@ CC := g++
 # -fopenmp, -fopenmp-simd = enable OpenMP
 #SIMDFLAG := -msse4.1
 #SIMDFLAG := -mavx2
-CFLAGS := $(SIMDFLAG) -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-result -pthread -O3 -march=native -std=c++98 -funroll-loops
+CFLAGS := $(SIMDFLAG) -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-result -pthread -O3 -march=native -std=c++11 -funroll-loops
 #CFLAGS += -fopenmp
 
 # INTEL compiler and linker options
-#CFLAGS := $(SIMDFLAG) -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-result -pthread -O3 -march=native -std=c++98 -funroll-loops
+#CFLAGS := $(SIMDFLAG) -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-result -pthread -O3 -march=native -std=c++11 -funroll-loops
 #CFLAGS += -openmp
 
 # Linker options
